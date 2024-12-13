@@ -53,27 +53,33 @@ fn main() -> () {
   let json_content = yaml_fmt(&yaml_content).unwrap();
   let json_string = serde_json::to_string(&json_content).unwrap();
   zip(&json_string, out_file_path.as_path()).unwrap();
+  println!("程序执行完毕，输出文件：{}，按回车键退出...", out_file_path.to_str().unwrap());
+  let mut input = String::new();
+  io::stdin().read_line(&mut input).unwrap();
 }
 
 
 fn get_zip_content(file: &Path) -> Result<Yaml, Box<dyn Error>> {
+  println!("正在解压文件：{} ...", file.to_str().unwrap());
   let mut archive = ZipArchive::new(fs::File::open(file)?)?;
   let mut file = archive.by_name("fsd/types.yaml")?;
   let mut buffer = String::new();
   if file.is_file() {
     file.read_to_string(&mut buffer)?;
   } else {
-    panic!("fsd/types.yaml not found");
+    panic!("fsd/types.yaml未在压缩包内找到");
   };
   parse_yaml(&buffer)
 }
 
 fn parse_yaml(content: &str) -> Result<Yaml, Box<dyn Error>> {
+  println!("正在解析YAML文件...");
   Ok(serde_yaml::from_str(content)?)
 }
 
 fn yaml_fmt(yaml: &Yaml) -> Result<Vec<JsonItem>, Box<dyn Error>> {
-  let mut items: Vec<JsonItem> = Vec::new();
+  println!("正在格式化JSON数据...");
+  let mut items = vec![];
   for (key, item) in &yaml.values {
     if item.marketGroupID.is_some() {
       let json_item = JsonItem {
@@ -88,6 +94,7 @@ fn yaml_fmt(yaml: &Yaml) -> Result<Vec<JsonItem>, Box<dyn Error>> {
 }
 
 fn zip(content: &str, out_file_path: &Path) -> io::Result<()> {
+  println!("正在压缩数据...");
   let output_file = fs::File::create(out_file_path)?;
   let mut encoder = GzEncoder::new(output_file, Compression::default());
   encoder.write_all(content.as_bytes())?;
